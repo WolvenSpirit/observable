@@ -1,7 +1,11 @@
 package observable
 
 import (
+	"errors"
+	"io"
+	"os"
 	"reflect"
+	"strings"
 	"sync"
 )
 
@@ -15,38 +19,48 @@ type observableInterface interface {
 
 type observable struct {
 	buffer      chan interface{}
-	subscribers map[int]*chan interface{}
-	m           sync.Mutex
+	subscribers sync.Map
+	i           *int
 }
 
+// Observable provides methods and hooks for transmitting data.
 type Observable struct {
 	observable
 }
 
+// New returns a pointer to a new Observable
+func New() *Observable {
+	var i int
+	return &Observable{observable: observable{i: &i}}
+}
+
 // Next - pass a new value to be broadcasted.
 func (o *Observable) Next(sl ...interface{}) {
-	o.m.Lock()
-	for _, v := range sl {
-		for k := range o.subscribers {
-			*o.subscribers[k] <- v
-
+	for k := range sl {
+		/*o.subscribers.Range(func(key interface{}, value interface{}) bool {
+			*value.(*chan interface{}) <- sl[k]
+			return true
+		})*/
+		for i := 0; i < *o.i; i++ {
+			if ch, ok := o.subscribers.Load(i); ok {
+				*ch.(*chan interface{}) <- sl[k]
+			}
 		}
 	}
-	o.m.Unlock()
 }
 func (o *Observable) allocate(id int) {
-	// ...
+	io.Copy(os.Stderr, strings.NewReader("Unimplemented"))
 }
 
 // Subscribe with your own channel to the events of the observable.
-func (o *Observable) Subscribe(ch *chan interface{}) {
-	o.m.Lock()
-	if o.subscribers == nil {
-		o.subscribers = make(map[int]*chan interface{})
+func (o *Observable) Subscribe(ch *chan interface{}) error {
+	if ch == nil {
+		return errors.New("Argument to subscribe is nil not chan")
 	}
-	o.subscribers[len(o.subscribers)+1] = ch
-	o.allocate(len(o.subscribers) + 1)
-	o.m.Unlock()
+	k := *o.i
+	*o.i++
+	o.subscribers.Store(k, ch)
+	return nil
 }
 
 // On provides a hook to execute a callback when a certain value is passed through the channel.
@@ -63,7 +77,10 @@ func (o *Observable) On(value interface{}, ch *chan interface{}, fn func()) {
 
 // Close effectivelly calls close() on all channels used by subscribers to this observable.
 func (o *Observable) Close() {
-	for _, ch := range o.subscribers {
-		close(*ch)
+	for i := 0; i < *o.i; i++ {
+		ch, ok := o.subscribers.Load(i)
+		if ok {
+			close(*ch.(*chan interface{}))
+		}
 	}
 }

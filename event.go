@@ -12,6 +12,7 @@ type stream struct {
 	M      sync.RWMutex
 }
 
+/*
 func (ev *stream) Trigger(eventType string, value interface{}) {
 	ev.M.Lock()
 	ev.Stream[eventType] <- value
@@ -28,3 +29,4 @@ func (ev *stream) On(eventType string, cb func(interface{}) (interface{}, error)
 	}
 	return nil, nil
 }
+*/
