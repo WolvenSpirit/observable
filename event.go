@@ -1,4 +1,4 @@
-package rxobservable
+package observable
 
 import "sync"
 
