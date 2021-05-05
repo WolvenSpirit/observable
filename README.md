@@ -1,4 +1,4 @@
-[![Actions Status](https://github.com/WolvenSpirit/observable/workflows/badge.svg)](https://github.com/WolvenSpirit/observable/actions)
+[![observable](https://github.com/WolvenSpirit/observable/actions/workflows/go.yml/badge.svg)](https://github.com/WolvenSpirit/observable/actions/workflows/go.yml)
 [![codecov](https://codecov.io/gh/WolvenSpirit/observable/branch/master/graph/badge.svg?token=TLWM6G8PWU)](https://codecov.io/gh/WolvenSpirit/observable)
 
 ### observable
