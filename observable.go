@@ -1,38 +1,34 @@
-package rxobservable
+package observable
 
-import "sync"
+import (
+	"reflect"
+	"sync"
+)
 
 /*
-rxobservable is meant to be a proof of concept demonstrating that the observer/subscriber pattern
-does not have to be different or complicated especially in a language such as Golang.
-By RX standards this would be an implementation of a hot observable that broadcasts the events to all subscribers.
 
-If Subscribe() would return an object it would need to be type asserted later,
-by passing a channel multiple subscribers can easily get events sent only once
-while letting you declare the type of data that you need to subscribe for.
-*/
-type observable interface {
+ */
+type observableInterface interface {
 	Next(interface{})
 	Subscribe(func(*chan interface{}))
 }
 
-type rxobservable struct {
+type observable struct {
 	buffer      chan interface{}
 	subscribers map[int]*chan interface{}
 	m           sync.Mutex
 }
 
-// Observable represents a stream to which you can subscribe with a channel for events (values)
 type Observable struct {
-	rxobservable
+	observable
 }
 
 // Next - pass a new value to be broadcasted.
 func (o *Observable) Next(sl ...interface{}) {
 	o.m.Lock()
 	for _, v := range sl {
-		for _, ch := range o.subscribers {
-			*ch <- v
+		for k := range o.subscribers {
+			*o.subscribers[k] <- v
 
 		}
 	}
@@ -53,7 +49,19 @@ func (o *Observable) Subscribe(ch *chan interface{}) {
 	o.m.Unlock()
 }
 
-// Close - subscribed channels will be closed by using this call.
+// On provides a hook to execute a callback when a certain value is passed through the channel.
+func (o *Observable) On(value interface{}, ch *chan interface{}, fn func()) {
+	for true {
+		select {
+		case v := <-*ch:
+			if reflect.DeepEqual(v, value) {
+				fn()
+			}
+		}
+	}
+}
+
+// Close effectivelly calls close() on all channels used by subscribers to this observable.
 func (o *Observable) Close() {
 	for _, ch := range o.subscribers {
 		close(*ch)
