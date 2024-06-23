@@ -46,7 +46,7 @@ func TestObservable_Subscribe(t *testing.T) {
 			} else {
 				return
 			}
-			_, ok := o.subscribers.Load(0)
+			_, ok := o.subscribers[0]
 			if !ok {
 				t.FailNow()
 			}
@@ -57,31 +57,6 @@ func TestObservable_Subscribe(t *testing.T) {
 				t.Errorf("No value transmitted through stored chan")
 			}
 			fmt.Println(val.(string))
-		})
-	}
-}
-
-func TestObservable_allocate(t *testing.T) {
-	type fields struct {
-		observable observable
-	}
-	type args struct {
-		id int
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		{
-			name: "",
-			args: args{id: 1},
-		},
-	}
-	for k := range tests {
-		t.Run(tests[k].name, func(t *testing.T) {
-			o := New()
-			o.allocate(tests[k].args.id)
 		})
 	}
 }
