@@ -64,7 +64,7 @@ func TestObservable_Subscribe(t *testing.T) {
 	for k := range tests {
 		t.Run(tests[k].name, func(t *testing.T) {
 			o := New()
-			err := o.Subscribe(tests[k].args.ch)
+			_, err := o.Subscribe(tests[k].args.ch)
 			if k == 1 && err == nil {
 				t.FailNow()
 			} else {
@@ -139,5 +139,33 @@ func TestObservable_Once(t *testing.T) {
 	time.Sleep(time.Second * 3)
 	if i != 5 {
 		t.Errorf("Expected %d and got %d", 5, i)
+	}
+}
+func TestObservable_Unsubscribe(t *testing.T) {
+	type args struct {
+		id int
+	}
+	o := New()
+	c := make(chan interface{}, 1)
+	o.Subscribe(&c)
+	tests := []struct {
+		name   string
+		O      *Observable
+		args   args
+		wantOk bool
+	}{
+		{
+			name:   "#1",
+			O:      o,
+			args:   args{id: 0},
+			wantOk: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotOk := o.Unsubscribe(tt.args.id); gotOk != tt.wantOk {
+				t.Errorf("Observable.Unsubscribe() = %v, want %v", gotOk, tt.wantOk)
+			}
+		})
 	}
 }

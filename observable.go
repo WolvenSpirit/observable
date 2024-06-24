@@ -51,15 +51,15 @@ func (o *Observable) allocate(id int) {
 	io.Copy(os.Stderr, strings.NewReader("Unimplemented"))
 }
 
-// Subscribe with your own channel to the events of the observable.
-func (o *Observable) Subscribe(ch *chan interface{}) error {
+// Subscribe with your own channel to the events of the observable. The function returns an id that can be used to unsubscribe.
+func (o *Observable) Subscribe(ch *chan interface{}) (int, error) {
 	if ch == nil {
-		return errors.New("Argument to subscribe is nil not chan")
+		return 0, errors.New("Argument to subscribe is nil not chan")
 	}
 	k := *o.i
 	*o.i++
 	o.subscribers.Store(k, ch)
-	return nil
+	return k, nil
 }
 
 // On provides a hook to execute a callback when a certain value is passed through the channel.
@@ -92,4 +92,10 @@ func (o *Observable) Close() {
 			close(*ch.(*chan interface{}))
 		}
 	}
+}
+
+// Unsubscribe removes the channel from the list of active subscribers, does not call close on them.
+func (o *Observable) Unsubscribe(id int) (ok bool) {
+	_, ok = o.subscribers.LoadAndDelete(id)
+	return
 }
