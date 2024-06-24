@@ -10,7 +10,6 @@ import (
 )
 
 /*
-
  */
 type observableInterface interface {
 	Next(interface{})
@@ -71,6 +70,16 @@ func (o *Observable) On(value interface{}, ch *chan interface{}, fn func()) {
 			if reflect.DeepEqual(v, value) {
 				fn()
 			}
+		}
+	}
+}
+
+// Once provides a hook to execute a callback when a certain value is passed through the channel.
+func (o *Observable) Once(value interface{}, ch *chan interface{}, fn func()) {
+	select {
+	case v := <-*ch:
+		if reflect.DeepEqual(v, value) {
+			fn()
 		}
 	}
 }

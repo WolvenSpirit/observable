@@ -2,6 +2,7 @@ package observable
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 )
@@ -15,6 +16,29 @@ func TestObservable_Next(t *testing.T) {
 	}()
 	v := <-ch
 	if v.(string) != "3" {
+		t.FailNow()
+	}
+}
+
+func BenchmarkObservable_Next(t *testing.B) {
+	o := New()
+	subscription := make(chan interface{}, 1)
+	o.Subscribe(&subscription)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		o.Next("3")
+		wg.Done()
+	}()
+	go func() {
+		o.Once("3", &subscription, func() {
+			o.Next("5")
+			wg.Done()
+		})
+	}()
+	wg.Wait()
+	v := <-subscription
+	if v.(string) != "5" {
 		t.FailNow()
 	}
 }
@@ -93,6 +117,22 @@ func TestObservable_On(t *testing.T) {
 	o.Subscribe(&ch)
 	var i int
 	go o.On("ev3", &ch, func() {
+		i = 5
+	})
+	o.Next("ev3")
+	time.Sleep(time.Second * 3)
+	if i != 5 {
+		t.Errorf("Expected %d and got %d", 5, i)
+	}
+}
+
+func TestObservable_Once(t *testing.T) {
+	ch := make(chan interface{}, 1)
+	o := New()
+	defer o.Close()
+	o.Subscribe(&ch)
+	var i int
+	go o.Once("ev3", &ch, func() {
 		i = 5
 	})
 	o.Next("ev3")
